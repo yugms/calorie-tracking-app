@@ -45,6 +45,10 @@ ios/               (later) native Swift/SwiftUI app
    - Apple — add Sign in with Apple credentials
    - Set the redirect URL to `http://localhost:3000/auth/callback` (and your prod URL).
 
+   > **First time setting up Google sign-in or deploying to Vercel?** See the detailed,
+   > beginner-friendly walkthrough in
+   > [`docs/google-auth-and-vercel.md`](./docs/google-auth-and-vercel.md).
+
 6. **Run the app:**
    ```bash
    npm run dev
