@@ -13,8 +13,8 @@ import type {
   MealType,
   Sex,
   UnitPref,
-} from './enums.js';
-import type { IsoDate, IsoTimestamp, UUID } from './nutrition.js';
+} from './enums';
+import type { IsoDate, IsoTimestamp, UUID } from './nutrition';
 
 export interface Profile {
   user_id: UUID;

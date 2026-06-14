@@ -3,7 +3,7 @@
  * Phase 3 implements this against USDA FoodData Central + Open Food Facts; a
  * Nutritionix implementation can be dropped in later with no caller changes.
  */
-import type { FoodSource, NutritionPer100g, Serving } from '../index.js';
+import type { FoodSource, NutritionPer100g, Serving } from '../index';
 
 /** A normalized food result, independent of which database produced it. */
 export interface FoodSearchResult {

@@ -2,9 +2,9 @@
  * Pure nutrition math. No I/O, no framework deps — safe to run in the browser,
  * in Supabase Edge Functions, or (ported) on iOS.
  */
-import { ACTIVITY_MULTIPLIERS } from '../types/enums.js';
-import type { ActivityLevel, GoalType, Sex } from '../types/enums.js';
-import type { NutritionFacts, NutritionPer100g } from '../types/nutrition.js';
+import { ACTIVITY_MULTIPLIERS } from '../types/enums';
+import type { ActivityLevel, GoalType, Sex } from '../types/enums';
+import type { NutritionFacts, NutritionPer100g } from '../types/nutrition';
 
 /** Calories per gram of each macronutrient (Atwater factors). */
 export const KCAL_PER_GRAM = { protein: 4, carbs: 4, fat: 9, alcohol: 7 } as const;
