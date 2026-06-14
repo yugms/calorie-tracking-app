@@ -3,7 +3,6 @@
 import { useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { env } from '@/lib/env';
 import { safeRedirectPath } from '@/lib/safe-redirect';
 
 type Mode = 'signin' | 'signup';
@@ -32,7 +31,7 @@ export function LoginForm() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${env.siteUrl}/auth/callback` },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
       if (error) return setError(error.message);
       setMessage('Check your email to confirm your account, then sign in.');
@@ -53,7 +52,7 @@ export function LoginForm() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${env.siteUrl}/auth/callback?next=${encodeURIComponent(redirectedFrom)}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectedFrom)}`,
       },
     });
     if (error) setError(error.message);
