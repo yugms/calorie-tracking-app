@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { NavLinks } from '@/components/nav-links';
 
 /** Protected layout: guarantees a session for everything under (app). */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -29,27 +30,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           <a href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700 }}>
             <span aria-hidden>🥗</span>
-            <span style={{ letterSpacing: '-0.02em' }}>Calorie Tracker</span>
+            <span className="hide-sm" style={{ letterSpacing: '-0.02em' }}>
+              Calorie Tracker
+            </span>
           </a>
-          <nav style={{ display: 'flex', gap: 4 }}>
-            {[
-              { href: '/dashboard', label: 'Today' },
-              { href: '/foods', label: 'Foods' },
-              { href: '/settings', label: 'Settings' },
-            ].map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                className="muted"
-                style={{ fontSize: 14, fontWeight: 600, padding: '6px 10px', borderRadius: 8 }}
-              >
-                {l.label}
-              </a>
-            ))}
-          </nav>
+          <NavLinks />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span className="muted" style={{ fontSize: 13 }} title={user.email ?? undefined}>
+          <span className="muted hide-sm" style={{ fontSize: 13 }} title={user.email ?? undefined}>
             {user.email}
           </span>
           <form action="/auth/signout" method="post">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useOptimistic, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { WaterEntry } from '@calorie/core';
 import { addWater, deleteWater } from '@/lib/actions/water';
@@ -20,10 +20,13 @@ export function WaterCard({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const pct = targetMl > 0 ? Math.min((totalMl / targetMl) * 100, 100) : 0;
+  // Optimistic total so taps register instantly, before the server round-trip.
+  const [optimisticMl, applyOptimistic] = useOptimistic(totalMl, (cur, delta: number) => Math.max(0, cur + delta));
+  const pct = targetMl > 0 ? Math.min((optimisticMl / targetMl) * 100, 100) : 0;
 
-  const run = (fn: () => Promise<void>) =>
+  const run = (delta: number, fn: () => Promise<void>) =>
     startTransition(async () => {
+      applyOptimistic(delta);
       await fn();
       router.refresh();
     });
@@ -33,7 +36,7 @@ export function WaterCard({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h2 style={{ margin: 0, fontSize: 15 }}>💧 Water</h2>
         <span className="muted" style={{ fontSize: 13 }}>
-          {(totalMl / 1000).toFixed(2)} / {(targetMl / 1000).toFixed(1)} L
+          {(optimisticMl / 1000).toFixed(2)} / {(targetMl / 1000).toFixed(1)} L
         </span>
       </div>
 
@@ -46,7 +49,7 @@ export function WaterCard({
           <button
             key={ml}
             disabled={pending}
-            onClick={() => run(() => addWater({ date, amount_ml: ml }))}
+            onClick={() => run(ml, () => addWater({ date, amount_ml: ml }))}
             style={{
               flex: 1,
               height: 38,
@@ -65,7 +68,11 @@ export function WaterCard({
         {entries.length > 0 && (
           <button
             disabled={pending}
-            onClick={() => run(() => deleteWater(entries[entries.length - 1]!.id))}
+            onClick={() =>
+              run(-Number(entries[entries.length - 1]!.amount_ml), () =>
+                deleteWater(entries[entries.length - 1]!.id),
+              )
+            }
             aria-label="Undo last water"
             style={{
               width: 38,

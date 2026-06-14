@@ -2,7 +2,7 @@
 
 A sleek, minimalist, **web-first** calorie and fitness tracker, architected from day one as a clean **API-driven** system so a **native iOS (Swift/SwiftUI)** app can be added later with minimal rework.
 
-> **Status:** Architecture approved. This document is the source of truth for scope and sequencing. No application code has been written yet — Phase 1 begins only after this roadmap is reviewed.
+> **Status:** ✅ All 5 phases shipped (Phases 1–5). Web app builds clean; backend is API-driven and iOS-ready. See [`docs/api-contract.md`](./docs/api-contract.md) and [`ios/README.md`](./ios/README.md) for the native-app handoff. This document remains the source of truth for scope.
 
 ---
 

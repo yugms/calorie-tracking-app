@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
-/** Lightweight, dependency-free modal with backdrop + Esc-to-close. */
+/** Lightweight, dependency-free modal with backdrop, Esc-to-close, focus trap. */
 export function Modal({
   open,
   onClose,
@@ -14,16 +14,48 @@ export function Modal({
   title: string;
   children: React.ReactNode;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!open) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    const focusables = () =>
+      Array.from(
+        panelRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+
+    // Move focus into the dialog (first field, else the panel itself).
+    const first = focusables()[0];
+    (first ?? panelRef.current)?.focus();
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const items = focusables();
+      if (items.length === 0) return;
+      const firstEl = items[0]!;
+      const lastEl = items[items.length - 1]!;
+      if (e.shiftKey && document.activeElement === firstEl) {
+        e.preventDefault();
+        lastEl.focus();
+      } else if (!e.shiftKey && document.activeElement === lastEl) {
+        e.preventDefault();
+        firstEl.focus();
+      }
     };
+
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
+      previouslyFocused?.focus?.();
     };
   }, [open, onClose]);
 
@@ -47,6 +79,8 @@ export function Modal({
       }}
     >
       <div
+        ref={panelRef}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className="card"
         style={{
@@ -57,6 +91,7 @@ export function Modal({
           borderRadius: '18px 18px 0 0',
           padding: 20,
           animation: 'sheet-up 0.18s ease',
+          outline: 'none',
         }}
       >
         <div
