@@ -4,13 +4,15 @@ import { useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { env } from '@/lib/env';
+import { safeRedirectPath } from '@/lib/safe-redirect';
 
 type Mode = 'signin' | 'signup';
 
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const redirectedFrom = params.get('redirectedFrom') ?? '/dashboard';
+  // Sanitize to an internal path to prevent open-redirect via the query param.
+  const redirectedFrom = safeRedirectPath(params.get('redirectedFrom'));
 
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
