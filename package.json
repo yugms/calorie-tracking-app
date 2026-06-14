@@ -1,0 +1,20 @@
+{
+  "name": "calorie-tracker",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Sleek, minimalist, web-first calorie & fitness tracker (API-driven, iOS-ready).",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:core": "npm run build --workspace @calorie/core",
+    "dev": "npm run dev --workspace @calorie/web",
+    "build": "npm run build:core && npm run build --workspace @calorie/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
