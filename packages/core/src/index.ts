@@ -16,3 +16,4 @@ export * from './providers/ai-provider';
 export * from './providers/impl/usda';
 export * from './providers/impl/open-food-facts';
 export * from './providers/impl/composite';
+export * from './providers/impl/gemini';

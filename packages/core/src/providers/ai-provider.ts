@@ -5,6 +5,7 @@
  * matching to the food DB and persistence happen downstream, always behind a
  * user-confirmation step.
  */
+import type { NutritionFacts } from '../types/nutrition';
 
 /** One candidate food item extracted from text or a photo. */
 export interface ParsedFoodItem {
@@ -16,6 +17,12 @@ export interface ParsedFoodItem {
   unit?: string | null;
   /** Vision/NLP estimate of the portion weight in grams, when inferable. */
   estimatedGrams?: number | null;
+  /**
+   * The model's own nutrition estimate for this item. Used as a fallback when
+   * the item can't be matched to the food database (so every item still has
+   * numbers the user can confirm or edit).
+   */
+  estimatedNutrition?: NutritionFacts;
   /** Model confidence 0..1 for this item. Surfaced on the confirmation screen. */
   confidence: number;
 }

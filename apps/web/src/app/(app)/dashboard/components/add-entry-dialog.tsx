@@ -13,6 +13,7 @@ import {
 import { Modal } from '@/components/modal';
 import { BarcodeScanner } from '@/components/barcode-scanner';
 import { addMealEntry } from '@/lib/actions/meals';
+import { addParsedEntries } from '@/lib/actions/ai';
 
 const MEAL_LABELS: Record<MealType, string> = {
   breakfast: 'Breakfast',
@@ -21,7 +22,18 @@ const MEAL_LABELS: Record<MealType, string> = {
   snack: 'Snacks',
 };
 
-/** A food from any source, normalized for the portion picker. */
+/** Client mirror of the server's DraftEntry (avoids importing the server-only module). */
+interface Draft {
+  description: string;
+  grams: number | null;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  confidence: number;
+  matchedSource: 'usda' | 'off' | null;
+}
+
 interface Pickable {
   name: string;
   brand: string | null;
@@ -95,7 +107,7 @@ export function AddEntryButton({
   );
 }
 
-type Tab = 'search' | 'saved' | 'manual';
+type Tab = 'search' | 'describe' | 'saved' | 'manual';
 
 function AddEntryForm({
   meal,
@@ -112,9 +124,13 @@ function AddEntryForm({
   const [tab, setTab] = useState<Tab>('search');
   const [picked, setPicked] = useState<Pickable | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [drafts, setDrafts] = useState<Draft[] | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [aiSource, setAiSource] = useState<'nlp' | 'photo'>('nlp');
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const fileRef = useRef<HTMLInputElement>(null);
 
   function submit(input: Parameters<typeof addMealEntry>[0]) {
     setError(null);
@@ -146,18 +162,58 @@ function AddEntryForm({
     }
   }
 
+  async function uploadPhoto(file: File) {
+    setError(null);
+    setNotice('Analyzing photo…');
+    setAiSource('photo');
+    try {
+      const body = new FormData();
+      body.append('image', file);
+      const res = await fetch('/api/ai/parse-photo', { method: 'POST', body });
+      const data = (await res.json()) as { drafts?: Draft[]; jobId?: string | null; error?: string };
+      setNotice(null);
+      if (!res.ok) return setError(data.error ?? 'Couldn’t analyze that photo.');
+      if (!data.drafts?.length) return setError('No foods detected. Try another photo or Quick add.');
+      setJobId(data.jobId ?? null);
+      setDrafts(data.drafts);
+    } catch {
+      setNotice(null);
+      setError('Photo analysis failed. Try again.');
+    }
+  }
+
+  // ── Sub-screens ──────────────────────────────────────────────
   if (scanning) {
     return (
       <div>
         <BarcodeScanner onDetected={lookupBarcode} />
-        <button
-          onClick={() => setScanning(false)}
-          className="btn btn-secondary"
-          style={{ marginTop: 12 }}
-        >
+        <button onClick={() => setScanning(false)} className="btn btn-secondary" style={{ marginTop: 12 }}>
           Cancel
         </button>
       </div>
+    );
+  }
+
+  if (drafts) {
+    return (
+      <DraftConfirm
+        drafts={drafts}
+        pending={pending}
+        onBack={() => setDrafts(null)}
+        onConfirm={(items) => {
+          setError(null);
+          startTransition(async () => {
+            try {
+              await addParsedEntries({ date, meal_type: meal, source: aiSource, jobId, items });
+              router.refresh();
+              onDone();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : 'Couldn’t save entries.');
+            }
+          });
+        }}
+        error={error}
+      />
     );
   }
 
@@ -187,31 +243,34 @@ function AddEntryForm({
     );
   }
 
-  const tabs: Tab[] = customFoods.length > 0 ? ['search', 'saved', 'manual'] : ['search', 'manual'];
+  const tabs: Tab[] = customFoods.length > 0
+    ? ['search', 'describe', 'saved', 'manual']
+    : ['search', 'describe', 'manual'];
 
   return (
     <div>
-      <button
-        onClick={() => {
-          setNotice(null);
-          setScanning(true);
-        }}
-        className="btn btn-secondary"
-        style={{ marginBottom: 14 }}
-      >
-        📷 Scan barcode
-      </button>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        <button onClick={() => { setNotice(null); setScanning(true); }} className="btn btn-secondary" style={{ flex: 1 }}>
+          📷 Scan
+        </button>
+        <button onClick={() => fileRef.current?.click()} className="btn btn-secondary" style={{ flex: 1 }}>
+          📸 Photo
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void uploadPhoto(f);
+            e.target.value = '';
+          }}
+        />
+      </div>
 
-      <div
-        style={{
-          display: 'flex',
-          gap: 4,
-          background: 'var(--surface-2)',
-          padding: 4,
-          borderRadius: 10,
-          marginBottom: 16,
-        }}
-      >
+      <div style={{ display: 'flex', gap: 4, background: 'var(--surface-2)', padding: 4, borderRadius: 10, marginBottom: 16 }}>
         {tabs.map((t) => (
           <button
             key={t}
@@ -222,21 +281,19 @@ function AddEntryForm({
               borderRadius: 7,
               border: 'none',
               cursor: 'pointer',
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 600,
               background: tab === t ? 'var(--surface)' : 'transparent',
               color: tab === t ? 'var(--text)' : 'var(--text-muted)',
               boxShadow: tab === t ? 'var(--shadow)' : 'none',
             }}
           >
-            {t === 'search' ? 'Search' : t === 'saved' ? 'My foods' : 'Quick add'}
+            {t === 'search' ? 'Search' : t === 'describe' ? '✨ Describe' : t === 'saved' ? 'My foods' : 'Quick add'}
           </button>
         ))}
       </div>
 
-      {notice && (
-        <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 0 }}>{notice}</p>
-      )}
+      {notice && <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 0 }}>{notice}</p>}
       {error && (
         <p role="alert" style={{ color: 'var(--danger)', fontSize: 13, marginTop: 0 }}>
           {error}
@@ -244,10 +301,157 @@ function AddEntryForm({
       )}
 
       {tab === 'search' && <SearchTab onPick={(r) => setPicked(fromSearchResult(r, 'manual'))} />}
-      {tab === 'saved' && (
-        <SavedList foods={customFoods} onPick={(f) => setPicked(fromCustomFood(f))} />
+      {tab === 'describe' && (
+        <DescribeTab
+          onParsed={(d, id) => {
+            setAiSource('nlp');
+            setJobId(id);
+            setDrafts(d);
+          }}
+          onError={setError}
+          onBusy={(b) => setNotice(b ? 'Analyzing…' : null)}
+        />
       )}
+      {tab === 'saved' && <SavedList foods={customFoods} onPick={(f) => setPicked(fromCustomFood(f))} />}
       {tab === 'manual' && <ManualForm meal={meal} date={date} pending={pending} onSubmit={submit} />}
+    </div>
+  );
+}
+
+function DescribeTab({
+  onParsed,
+  onError,
+  onBusy,
+}: {
+  onParsed: (drafts: Draft[], jobId: string | null) => void;
+  onError: (msg: string) => void;
+  onBusy: (busy: boolean) => void;
+}) {
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function analyze() {
+    if (text.trim().length < 3) return;
+    setBusy(true);
+    onBusy(true);
+    onError('');
+    try {
+      const res = await fetch('/api/ai/parse-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.trim() }),
+      });
+      const data = (await res.json()) as { drafts?: Draft[]; jobId?: string | null; error?: string };
+      if (!res.ok) return onError(data.error ?? 'Couldn’t analyze that.');
+      if (!data.drafts?.length) return onError('No foods detected. Try rephrasing.');
+      onParsed(data.drafts, data.jobId ?? null);
+    } catch {
+      onError('Analysis failed. Try again.');
+    } finally {
+      setBusy(false);
+      onBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <p className="muted" style={{ fontSize: 13, margin: 0 }}>
+        Describe what you ate in plain words — AI splits it into items you can review.
+      </p>
+      <textarea
+        className="input"
+        autoFocus
+        rows={3}
+        style={{ height: 'auto', paddingTop: 10, paddingBottom: 10, resize: 'vertical', lineHeight: 1.4 }}
+        placeholder="e.g. a bowl of oatmeal with a handful of blueberries and a black coffee"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <button className="btn btn-primary" disabled={busy || text.trim().length < 3} onClick={analyze}>
+        {busy ? 'Analyzing…' : '✨ Analyze'}
+      </button>
+    </div>
+  );
+}
+
+function DraftConfirm({
+  drafts: initial,
+  pending,
+  error,
+  onBack,
+  onConfirm,
+}: {
+  drafts: Draft[];
+  pending: boolean;
+  error: string | null;
+  onBack: () => void;
+  onConfirm: (items: Draft[]) => void;
+}) {
+  const [drafts, setDrafts] = useState<Draft[]>(initial);
+  const total = drafts.reduce((s, d) => s + (Number(d.calories) || 0), 0);
+
+  const update = (i: number, patch: Partial<Draft>) =>
+    setDrafts((ds) => ds.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
+  const remove = (i: number) => setDrafts((ds) => ds.filter((_, idx) => idx !== i));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <button onClick={onBack} className="muted" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, alignSelf: 'flex-start', padding: 0 }}>
+        ‹ Back
+      </button>
+      <p className="muted" style={{ fontSize: 13, margin: 0 }}>
+        Review and edit before adding. {drafts.length} item{drafts.length === 1 ? '' : 's'}.
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 320, overflowY: 'auto' }}>
+        {drafts.map((d, i) => (
+          <div key={i} className="card" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                className="input"
+                style={{ height: 38, flex: 1 }}
+                value={d.description}
+                onChange={(e) => update(i, { description: e.target.value })}
+              />
+              <button onClick={() => remove(i)} aria-label="Remove" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, padding: 6 }}>
+                ✕
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['grams', 'calories', 'protein_g', 'carbs_g', 'fat_g'] as const).map((k) => (
+                <label key={k} style={{ flex: 1 }}>
+                  <span className="muted" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>
+                    {k === 'grams' ? 'g' : k === 'calories' ? 'kcal' : k === 'protein_g' ? 'P' : k === 'carbs_g' ? 'C' : 'F'}
+                  </span>
+                  <input
+                    className="input"
+                    style={{ height: 34, padding: '0 8px', fontSize: 13 }}
+                    type="number"
+                    min={0}
+                    value={d[k] ?? ''}
+                    onChange={(e) => update(i, { [k]: e.target.value === '' ? (k === 'grams' ? null : 0) : Number(e.target.value) })}
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="muted" style={{ fontSize: 11 }}>
+              {d.matchedSource ? `Matched ${d.matchedSource === 'usda' ? 'USDA' : 'Open Food Facts'}` : 'AI estimate'}
+              {' · '}
+              {Math.round((Number(d.confidence) || 0) * 100)}% confidence
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {error && (
+        <p role="alert" style={{ color: 'var(--danger)', fontSize: 13, margin: 0 }}>
+          {error}
+        </p>
+      )}
+
+      <button className="btn btn-primary" disabled={pending || drafts.length === 0} onClick={() => onConfirm(drafts)}>
+        {pending ? 'Adding…' : `Add ${drafts.length} item${drafts.length === 1 ? '' : 's'} · ${Math.round(total)} kcal`}
+      </button>
     </div>
   );
 }
@@ -269,11 +473,7 @@ function PortionPicker({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <button
-        onClick={onBack}
-        className="muted"
-        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, alignSelf: 'flex-start', padding: 0 }}
-      >
+      <button onClick={onBack} className="muted" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, alignSelf: 'flex-start', padding: 0 }}>
         ‹ Back
       </button>
       <div>
@@ -286,14 +486,7 @@ function PortionPicker({
       </div>
       <div>
         <label className="label">Amount (g)</label>
-        <input
-          className="input"
-          type="number"
-          min={1}
-          autoFocus
-          value={grams}
-          onChange={(e) => setGrams(e.target.value)}
-        />
+        <input className="input" type="number" min={1} autoFocus value={grams} onChange={(e) => setGrams(e.target.value)} />
       </div>
       <div className="card" style={{ padding: 12, display: 'flex', justifyContent: 'space-around', fontSize: 13 }}>
         <span>
@@ -345,13 +538,7 @@ function SearchTab({ onPick }: { onPick: (r: FoodSearchResult) => void }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <input
-        className="input"
-        placeholder="Search foods (e.g. greek yogurt)…"
-        autoFocus
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+      <input className="input" placeholder="Search foods (e.g. greek yogurt)…" autoFocus value={query} onChange={(e) => setQuery(e.target.value)} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
         {loading && (
           <p className="muted" style={{ fontSize: 13, textAlign: 'center', padding: '12px 0' }}>
