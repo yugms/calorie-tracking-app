@@ -35,7 +35,9 @@ ios/               (later) native Swift/SwiftUI app
    `supabase db push`.)
 
 4. **Configure environment.** Copy `.env.example` to `apps/web/.env.local` and fill in your
-   Supabase URL + anon key.
+   Supabase URL + **publishable key** (`sb_publishable_…`). Use the modern
+   publishable/secret keys under Project Settings → API Keys, not the legacy
+   anon/service_role keys (deprecated by end of 2026).
 
 5. **Enable auth providers** (Supabase dashboard → Authentication → Providers):
    - Email (on by default)

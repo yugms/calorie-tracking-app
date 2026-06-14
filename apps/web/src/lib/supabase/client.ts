@@ -5,5 +5,5 @@ import { env } from '@/lib/env';
 
 /** Supabase client for use in Client Components (browser). */
 export function createClient() {
-  return createBrowserClient(env.supabaseUrl, env.supabaseAnonKey);
+  return createBrowserClient(env.supabaseUrl, env.supabasePublishableKey);
 }
