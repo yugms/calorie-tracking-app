@@ -83,20 +83,13 @@ export function AddEntryButton({
     <>
       <button
         onClick={() => setOpen(true)}
+        className="icon-btn"
         aria-label={`Add to ${MEAL_LABELS[meal]}`}
-        style={{
-          width: 30,
-          height: 30,
-          borderRadius: 8,
-          border: '1px solid var(--border)',
-          background: 'var(--surface)',
-          color: 'var(--accent)',
-          fontSize: 20,
-          lineHeight: 1,
-          cursor: 'pointer',
-        }}
+        style={{ width: 32, height: 32, color: 'var(--accent)' }}
       >
-        +
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
       </button>
       {open && (
         <Modal open={open} onClose={() => setOpen(false)} title={`Add to ${MEAL_LABELS[meal]}`}>
@@ -270,23 +263,14 @@ function AddEntryForm({
         />
       </div>
 
-      <div style={{ display: 'flex', gap: 4, background: 'var(--surface-2)', padding: 4, borderRadius: 10, marginBottom: 16 }}>
+      <div className="seg" style={{ marginBottom: 16 }}>
         {tabs.map((t) => (
           <button
             key={t}
+            className="seg-item"
+            data-active={tab === t}
             onClick={() => setTab(t)}
-            style={{
-              flex: 1,
-              height: 34,
-              borderRadius: 7,
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 600,
-              background: tab === t ? 'var(--surface)' : 'transparent',
-              color: tab === t ? 'var(--text)' : 'var(--text-muted)',
-              boxShadow: tab === t ? 'var(--shadow)' : 'none',
-            }}
+            style={{ fontSize: 12 }}
           >
             {t === 'search' ? 'Search' : t === 'describe' ? '✨ Describe' : t === 'saved' ? 'My foods' : 'Quick add'}
           </button>

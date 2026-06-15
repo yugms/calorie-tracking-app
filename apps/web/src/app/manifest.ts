@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'A sleek, minimalist calorie & fitness tracker.',
     start_url: '/dashboard',
     display: 'standalone',
-    background_color: '#fafafa',
-    theme_color: '#16a34a',
+    background_color: '#fbfaf8',
+    theme_color: '#fbfaf8',
     icons: [
       { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
     ],

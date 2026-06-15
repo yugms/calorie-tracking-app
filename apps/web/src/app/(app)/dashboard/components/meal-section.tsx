@@ -12,6 +12,12 @@ const MEAL_LABELS: Record<MealType, string> = {
   dinner: 'Dinner',
   snack: 'Snacks',
 };
+const MEAL_ICONS: Record<MealType, string> = {
+  breakfast: '🍳',
+  lunch: '🥗',
+  dinner: '🍽️',
+  snack: '🍎',
+};
 
 export function MealSection({
   meal,
@@ -38,18 +44,33 @@ export function MealSection({
 
   return (
     <section className="card" style={{ padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <h2 style={{ margin: 0, fontSize: 15 }}>{MEAL_LABELS[meal]}</h2>
-          <span className="muted" style={{ fontSize: 13 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span
+          aria-hidden
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 11,
+            background: 'var(--surface-2)',
+            display: 'grid',
+            placeItems: 'center',
+            fontSize: 18,
+            flexShrink: 0,
+          }}
+        >
+          {MEAL_ICONS[meal]}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 className="h2">{MEAL_LABELS[meal]}</h2>
+          <div className="eyebrow tnum" style={{ marginTop: 2 }}>
             {Math.round(calories)} kcal
-          </span>
+          </div>
         </div>
         <AddEntryButton meal={meal} date={date} customFoods={customFoods} />
       </div>
 
       {entries.length > 0 && (
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ marginTop: 8 }}>
           {entries.map((e, i) => (
             <div
               key={e.id}
@@ -57,35 +78,31 @@ export function MealSection({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '8px 0',
-                borderTop: i === 0 ? 'none' : '1px solid var(--border)',
-                opacity: pending ? 0.6 : 1,
+                gap: 12,
+                padding: '11px 0',
+                borderTop: i === 0 ? '1px solid var(--border)' : '1px solid var(--border)',
+                opacity: pending ? 0.55 : 1,
+                transition: 'opacity var(--dur-fast) var(--ease)',
               }}
             >
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: 14.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {e.description}
                 </div>
-                <div className="muted" style={{ fontSize: 12 }}>
+                <div className="muted tnum" style={{ fontSize: 12, marginTop: 1 }}>
                   {e.grams ? `${Math.round(Number(e.grams))} g · ` : ''}
-                  {Math.round(Number(e.protein_g))}P · {Math.round(Number(e.carbs_g))}C ·{' '}
-                  {Math.round(Number(e.fat_g))}F
+                  {Math.round(Number(e.protein_g))}P · {Math.round(Number(e.carbs_g))}C · {Math.round(Number(e.fat_g))}F
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{Math.round(Number(e.calories))}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                <span className="tnum" style={{ fontSize: 14.5, fontWeight: 600 }}>
+                  {Math.round(Number(e.calories))}
+                </span>
                 <button
                   onClick={() => remove(e.id)}
                   disabled={pending}
                   aria-label={`Delete ${e.description}`}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    fontSize: 15,
-                    padding: 4,
-                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 14, padding: 4, lineHeight: 1 }}
                 >
                   ✕
                 </button>

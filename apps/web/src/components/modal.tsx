@@ -67,63 +67,62 @@ export function Modal({
       aria-modal="true"
       aria-label={title}
       onClick={onClose}
+      className="sheet-overlay"
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.45)',
+        background: 'var(--backdrop)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'center',
         zIndex: 50,
-        padding: 0,
+        animation: 'backdrop-in var(--dur) var(--ease-out)',
       }}
     >
       <div
         ref={panelRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="card"
+        className="sheet-panel"
         style={{
           width: '100%',
           maxWidth: 460,
-          maxHeight: '88dvh',
+          maxHeight: '90dvh',
           overflowY: 'auto',
-          borderRadius: '18px 18px 0 0',
-          padding: 20,
-          animation: 'sheet-up 0.18s ease',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderBottom: 'none',
+          borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
+          boxShadow: 'var(--shadow-lg)',
+          padding: '10px 20px calc(20px + env(safe-area-inset-bottom))',
+          animation: 'sheet-up var(--dur-slow) var(--ease)',
           outline: 'none',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 16,
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: 18 }}>{title}</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              background: 'var(--surface-2)',
-              border: 'none',
-              borderRadius: 8,
-              width: 32,
-              height: 32,
-              cursor: 'pointer',
-              fontSize: 18,
-              color: 'var(--text-muted)',
-            }}
-          >
-            ✕
+        {/* iOS grabber */}
+        <div aria-hidden style={{ display: 'flex', justifyContent: 'center', padding: '2px 0 12px' }}>
+          <span style={{ width: 38, height: 4, borderRadius: 999, background: 'var(--border-strong)' }} />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h2 className="h2" style={{ fontSize: 18 }}>
+            {title}
+          </h2>
+          <button onClick={onClose} className="icon-btn" aria-label="Close" style={{ width: 30, height: 30, color: 'var(--text-secondary)' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
           </button>
         </div>
         {children}
       </div>
-      <style>{`@keyframes sheet-up { from { transform: translateY(12px); opacity: 0.6 } to { transform: translateY(0); opacity: 1 } }
-        @media (min-width: 520px) { [role="dialog"] { align-items: center !important; padding: 24px !important } [role="dialog"] > .card { border-radius: 18px !important } }`}</style>
+      <style>{`@media (min-width: 540px) {
+        .sheet-overlay { align-items: center !important; padding: 24px; }
+        .sheet-panel { border-radius: var(--radius-lg) !important; border-bottom: 1px solid var(--border) !important; }
+        .sheet-panel > div[aria-hidden] { display: none !important; }
+      }`}</style>
     </div>
   );
 }

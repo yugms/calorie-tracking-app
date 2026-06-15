@@ -27,35 +27,29 @@ export function ExerciseCard({
   }
 
   return (
-    <section className="card" style={{ padding: 16 }}>
+    <section className="card" style={{ padding: 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <h2 style={{ margin: 0, fontSize: 15 }}>🏃 Exercise</h2>
-          <span className="muted" style={{ fontSize: 13 }}>
-            {Math.round(totalKcal)} kcal
-          </span>
-        </div>
-        <button
-          onClick={() => setOpen(true)}
-          aria-label="Add exercise"
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 8,
-            border: '1px solid var(--border)',
-            background: 'var(--surface)',
-            color: 'var(--accent)',
-            fontSize: 20,
-            lineHeight: 1,
-            cursor: 'pointer',
-          }}
-        >
-          +
+        <span className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span aria-hidden>🏃</span> Exercise
+        </span>
+        <button onClick={() => setOpen(true)} className="icon-btn" aria-label="Add exercise" style={{ width: 30, height: 30, color: 'var(--accent)' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
         </button>
       </div>
 
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, margin: '10px 0 4px' }}>
+        <span className="display tnum" style={{ fontSize: 30 }}>
+          {Math.round(totalKcal)}
+        </span>
+        <span className="muted" style={{ fontSize: 13 }}>
+          kcal burned
+        </span>
+      </div>
+
       {entries.length > 0 && (
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 10 }}>
           {entries.map((e, i) => (
             <div
               key={e.id}
@@ -63,26 +57,28 @@ export function ExerciseCard({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '8px 0',
-                borderTop: i === 0 ? 'none' : '1px solid var(--border)',
-                opacity: pending ? 0.6 : 1,
+                padding: '9px 0',
+                borderTop: '1px solid var(--border)',
+                opacity: pending ? 0.55 : 1,
               }}
             >
               <div>
                 <div style={{ fontSize: 14 }}>{e.activity_name}</div>
                 {e.duration_min != null && (
-                  <div className="muted" style={{ fontSize: 12 }}>
+                  <div className="muted tnum" style={{ fontSize: 12 }}>
                     {Math.round(Number(e.duration_min))} min
                   </div>
                 )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{Math.round(Number(e.calories_burned))}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="tnum" style={{ fontSize: 14, fontWeight: 600 }}>
+                  {Math.round(Number(e.calories_burned))}
+                </span>
                 <button
                   onClick={() => remove(e.id)}
                   disabled={pending}
                   aria-label={`Delete ${e.activity_name}`}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 15, padding: 4 }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 14, padding: 4 }}
                 >
                   ✕
                 </button>
@@ -129,18 +125,11 @@ function ExerciseForm({ date, onDone }: { date: string; onDone: () => void }) {
           }
         });
       }}
-      style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
     >
       <div>
         <label className="label">Activity</label>
-        <input
-          className="input"
-          autoFocus
-          required
-          placeholder="e.g. Running"
-          value={activity}
-          onChange={(e) => setActivity(e.target.value)}
-        />
+        <input className="input" autoFocus required placeholder="e.g. Running" value={activity} onChange={(e) => setActivity(e.target.value)} />
       </div>
       <div style={{ display: 'flex', gap: 10 }}>
         <div style={{ flex: 1 }}>

@@ -8,22 +8,11 @@ export function DateNav({ date }: { date: string }) {
   const go = (iso: string) => router.push(iso === todayIso() ? '/dashboard' : `/dashboard?date=${iso}`);
   const isToday = date === todayIso();
 
-  const arrow: React.CSSProperties = {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    border: '1px solid var(--border)',
-    background: 'var(--surface)',
-    cursor: 'pointer',
-    fontSize: 16,
-    color: 'var(--text)',
-  };
-
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
       <div>
-        <h1 style={{ margin: 0, fontSize: 22, letterSpacing: '-0.02em' }}>{dateLabel(date)}</h1>
-        <p className="muted" style={{ margin: '2px 0 0', fontSize: 13 }}>
+        <h1 className="h1">{dateLabel(date)}</h1>
+        <p className="muted" style={{ margin: '3px 0 0', fontSize: 13 }}>
           {new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
             month: 'long',
             day: 'numeric',
@@ -32,34 +21,30 @@ export function DateNav({ date }: { date: string }) {
         </p>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button style={arrow} onClick={() => go(addDays(date, -1))} aria-label="Previous day">
-          ‹
+        <button className="icon-btn" onClick={() => go(addDays(date, -1))} aria-label="Previous day">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
         </button>
         {!isToday && (
           <button
             onClick={() => go(todayIso())}
-            style={{
-              height: 38,
-              padding: '0 12px',
-              borderRadius: 10,
-              border: '1px solid var(--border)',
-              background: 'var(--surface)',
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--text)',
-            }}
+            className="chip"
+            style={{ height: 34, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
           >
             Today
           </button>
         )}
         <button
-          style={{ ...arrow, opacity: isToday ? 0.4 : 1 }}
+          className="icon-btn"
           disabled={isToday}
+          style={{ opacity: isToday ? 0.4 : 1 }}
           onClick={() => go(addDays(date, 1))}
           aria-label="Next day"
         >
-          ›
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
         </button>
       </div>
     </div>

@@ -22,7 +22,7 @@ export default async function DashboardPage({
   const waterTarget = day.profile?.daily_water_target_ml ?? 2000;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <DateNav date={date} />
 
       <CalorieSummary
@@ -31,20 +31,25 @@ export default async function DashboardPage({
         burned={day.totals.exerciseKcal}
       />
 
-      {day.meals.map((group) => (
-        <MealSection
-          key={group.meal}
-          meal={group.meal}
-          entries={group.entries}
-          calories={group.totals.calories}
-          date={date}
-          customFoods={customFoods}
-        />
-      ))}
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
         <WaterCard date={date} entries={day.water} totalMl={day.totals.waterMl} targetMl={waterTarget} />
         <ExerciseCard date={date} entries={day.exercise} totalKcal={day.totals.exerciseKcal} />
+      </div>
+
+      <div className="eyebrow" style={{ marginTop: 4, marginLeft: 2 }}>
+        Diary
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {day.meals.map((group) => (
+          <MealSection
+            key={group.meal}
+            meal={group.meal}
+            entries={group.entries}
+            calories={group.totals.calories}
+            date={date}
+            customFoods={customFoods}
+          />
+        ))}
       </div>
     </div>
   );
