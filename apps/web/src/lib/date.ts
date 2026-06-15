@@ -1,6 +1,6 @@
 /** Date helpers. Logs are keyed by calendar date (YYYY-MM-DD). */
 
-/** Local calendar date as YYYY-MM-DD. */
+/** Local calendar date as YYYY-MM-DD (uses the runtime's local timezone). */
 export function todayIso(d: Date = new Date()): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -8,13 +8,31 @@ export function todayIso(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-/** Validate a YYYY-MM-DD string; fall back to today if malformed. */
-export function normalizeIsoDate(value: string | undefined | null): string {
+/**
+ * Calendar date as YYYY-MM-DD in a specific IANA timezone. Used on the server,
+ * where the runtime is UTC, to compute the *user's* local "today".
+ */
+export function todayIsoInTz(timeZone: string, d: Date = new Date()): string {
+  try {
+    // en-CA formats as YYYY-MM-DD.
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d);
+  } catch {
+    return todayIso(d);
+  }
+}
+
+/** Validate a YYYY-MM-DD string; fall back to `fallback` (today) if malformed. */
+export function normalizeIsoDate(value: string | undefined | null, fallback: string = todayIso()): string {
   if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
     const parsed = new Date(`${value}T00:00:00`);
     if (!Number.isNaN(parsed.getTime())) return value;
   }
-  return todayIso();
+  return fallback;
 }
 
 /** Shift a YYYY-MM-DD by whole days (negative = past). */

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { NavLinks } from '@/components/nav-links';
+import { TimezoneSync } from '@/components/timezone-sync';
 
 /** Protected layout: guarantees a session for everything under (app). */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      <TimezoneSync />
       <header
         style={{
           height: 60,

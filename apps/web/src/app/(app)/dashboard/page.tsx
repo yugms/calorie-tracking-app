@@ -1,5 +1,6 @@
 import { getCustomFoods, getDayData } from '@/lib/data/queries';
 import { normalizeIsoDate } from '@/lib/date';
+import { serverToday } from '@/lib/timezone';
 import { CalorieSummary } from './components/calorie-summary';
 import { DateNav } from './components/date-nav';
 import { MealSection } from './components/meal-section';
@@ -14,7 +15,8 @@ export default async function DashboardPage({
   searchParams: Promise<{ date?: string }>;
 }) {
   const { date: dateParam } = await searchParams;
-  const date = normalizeIsoDate(dateParam);
+  // Default to the user's local "today" (server runs in UTC; tz comes from a cookie).
+  const date = normalizeIsoDate(dateParam, await serverToday());
 
   const [day, customFoods] = await Promise.all([getDayData(date), getCustomFoods()]);
   const waterTarget = day.profile?.daily_water_target_ml ?? 2000;
