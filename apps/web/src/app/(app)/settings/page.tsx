@@ -1,4 +1,5 @@
 import { getProfile } from '@/lib/data/queries';
+import { AccountManagement } from '@/components/account-management';
 import { SettingsForm } from './settings-form';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,7 @@ export default async function SettingsPage() {
         </p>
       </div>
       <SettingsForm profile={profile} />
+      <AccountManagement />
     </div>
   );
 }

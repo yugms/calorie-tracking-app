@@ -35,6 +35,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login');
 
+  // Gate the app behind a completed profile.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('onboarded_at')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (!profile?.onboarded_at) redirect('/onboarding');
+
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       <TimezoneSync />

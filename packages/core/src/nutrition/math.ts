@@ -3,11 +3,14 @@
  * in Supabase Edge Functions, or (ported) on iOS.
  */
 import { ACTIVITY_MULTIPLIERS } from '../types/enums';
-import type { ActivityLevel, GoalType, Sex } from '../types/enums';
+import type { ActivityLevel, GoalType, PrimaryGoal, Sex, UnitPref } from '../types/enums';
 import type { NutritionFacts, NutritionPer100g } from '../types/nutrition';
 
 /** Calories per gram of each macronutrient (Atwater factors). */
 export const KCAL_PER_GRAM = { protein: 4, carbs: 4, fat: 9, alcohol: 7 } as const;
+
+/** Energy density of body mass change (kcal per kg). ~3500 kcal/lb. */
+export const KCAL_PER_KG = 7700;
 
 const round = (n: number, dp = 1): number => {
   const f = 10 ** dp;
@@ -115,4 +118,103 @@ export function calorieTargetForGoal(tdeeKcal: number, goal: GoalType): number {
     default:
       return tdeeKcal;
   }
+}
+
+/** Map the richer onboarding goal down to the BMR/TDEE math's goal direction. */
+export function goalTypeForPrimary(goal: PrimaryGoal): GoalType {
+  switch (goal) {
+    case 'lose':
+      return 'lose';
+    case 'gain':
+      return 'gain';
+    case 'maintain':
+    case 'perform':
+    default:
+      return 'maintain';
+  }
+}
+
+/**
+ * Safe minimum daily calories (a "floor" below which targets are capped).
+ * Conventional clinical minimums: ~1500 kcal men, ~1200 kcal women.
+ */
+export function calorieFloorForSex(sex: Sex): number {
+  return sex === 'male' ? 1500 : 1200;
+}
+
+/**
+ * Daily calorie target from TDEE given a goal direction and a desired weekly
+ * rate of weight change. Applies a deficit/surplus of `kgPerWeek` worth of body
+ * mass per week, then clamps to the safe floor. `floored` flags when the
+ * requested rate was too aggressive and the target was capped.
+ */
+export function calorieTargetFromRate(params: {
+  tdee: number;
+  sex: Sex;
+  goal: GoalType;
+  kgPerWeek: number;
+}): { target: number; floored: boolean } {
+  const { tdee, sex, goal, kgPerWeek } = params;
+  const dailyDelta = (Math.abs(kgPerWeek) * KCAL_PER_KG) / 7;
+  let raw = tdee;
+  if (goal === 'lose') raw = tdee - dailyDelta;
+  else if (goal === 'gain') raw = tdee + dailyDelta;
+
+  const floor = calorieFloorForSex(sex);
+  if (goal === 'lose' && raw < floor) {
+    return { target: floor, floored: true };
+  }
+  return { target: Math.round(raw), floored: false };
+}
+
+/**
+ * Split a daily calorie target into protein/carbs/fat gram targets. Protein is
+ * set per kg of body weight by goal; fat is ~27% of calories; carbs take the
+ * remainder (Atwater 4/4/9, never negative).
+ */
+export function macroTargetsForCalories(params: {
+  calories: number;
+  weightKg: number;
+  primaryGoal: PrimaryGoal;
+}): { protein_g: number; carbs_g: number; fat_g: number } {
+  const { calories, weightKg, primaryGoal } = params;
+  const proteinPerKg =
+    primaryGoal === 'lose' ? 2.0 : primaryGoal === 'maintain' ? 1.6 : 1.8;
+  const protein_g = Math.round(weightKg * proteinPerKg);
+  const fat_g = Math.round((calories * 0.27) / KCAL_PER_GRAM.fat);
+  const remaining =
+    calories - protein_g * KCAL_PER_GRAM.protein - fat_g * KCAL_PER_GRAM.fat;
+  const carbs_g = Math.max(0, Math.round(remaining / KCAL_PER_GRAM.carbs));
+  return { protein_g, carbs_g, fat_g };
+}
+
+// --- Unit conversions (storage is always metric) ----------------------------
+const KG_PER_LB = 0.45359237;
+const CM_PER_IN = 2.54;
+
+export function lbToKg(lb: number): number {
+  return round(lb * KG_PER_LB, 2);
+}
+export function kgToLb(kg: number): number {
+  return round(kg / KG_PER_LB, 1);
+}
+export function ftInToCm(ft: number, inches: number): number {
+  return round((ft * 12 + inches) * CM_PER_IN, 1);
+}
+export function cmToFtIn(cm: number): { ft: number; inches: number } {
+  const totalIn = cm / CM_PER_IN;
+  const ft = Math.floor(totalIn / 12);
+  const inches = Math.round(totalIn - ft * 12);
+  // Carry 12" up to the next foot.
+  return inches === 12 ? { ft: ft + 1, inches: 0 } : { ft, inches };
+}
+
+/**
+ * Default unit system for a locale/region. Imperial only for the handful of
+ * countries that use it day-to-day; metric everywhere else. Pass an ISO 3166
+ * region code (e.g. `'US'`) — derive it from `new Intl.Locale(navigator.language).region`.
+ */
+export function defaultUnitsForLocale(region: string | null | undefined): UnitPref {
+  const imperial = new Set(['US', 'LR', 'MM']);
+  return region && imperial.has(region.toUpperCase()) ? 'imperial' : 'metric';
 }

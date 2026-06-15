@@ -30,6 +30,40 @@ export type ActivityLevel = (typeof ACTIVITY_LEVELS)[number];
 export const GOAL_TYPES = ['lose', 'maintain', 'gain'] as const;
 export type GoalType = (typeof GOAL_TYPES)[number];
 
+/**
+ * The richer goal shown in onboarding. Maps down to a {@link GoalType} for the
+ * BMR/TDEE math via {@link goalTypeForPrimary}.
+ */
+export const PRIMARY_GOALS = ['lose', 'maintain', 'gain', 'perform'] as const;
+export type PrimaryGoal = (typeof PRIMARY_GOALS)[number];
+
+/** Dietary profile chosen during onboarding. */
+export const DIET_PROFILES = [
+  'standard',
+  'vegetarian',
+  'vegan',
+  'plant_based',
+  'keto',
+  'custom',
+] as const;
+export type DietProfile = (typeof DIET_PROFILES)[number];
+
+/** Common exclusions / allergens offered as a multi-select in onboarding. */
+export const COMMON_EXCLUSIONS = [
+  'dairy',
+  'eggs',
+  'gluten',
+  'peanuts',
+  'tree_nuts',
+  'soy',
+  'shellfish',
+  'fish',
+  'pork',
+  'red_meat',
+  'sesame',
+] as const;
+export type Exclusion = (typeof COMMON_EXCLUSIONS)[number];
+
 export const UNIT_PREFS = ['metric', 'imperial'] as const;
 export type UnitPref = (typeof UNIT_PREFS)[number];
 

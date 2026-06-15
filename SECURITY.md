@@ -34,6 +34,21 @@ Review of the codebase and setup instructions for secret leaks, authorization ga
 - **`handle_new_user` trigger** is `security definer` with a pinned `search_path = public` (prevents search-path hijacking).
 - **Storage:** the `meal-photos` bucket is private, with policies restricting each user to their own `<user_id>/` prefix.
 
+## Onboarding & account management (migration 0004)
+
+- **Account deletion** uses a `SECURITY DEFINER` Postgres function `delete_account()`
+  (`0004_onboarding.sql`) rather than the service-role key. The function deletes
+  `auth.users where id = auth.uid()` (cascading every owned table), so the user
+  removes only **their own** account, and **no service secret is shipped into the
+  app runtime**. `execute` is granted to `authenticated` only (revoked from
+  `public`/`anon`); the function pins `search_path = public, auth` and re-checks
+  `auth.uid()`.
+- **Account reset** (`resetAccount`) runs entirely under the caller's own RLS
+  session — it deletes only rows the owner-scoped policies already permit, plus
+  resets their profile to signup defaults. No elevated privileges.
+- **`weight_entries`** (new table) has RLS enabled with the same owner-only
+  policies as the other user tables.
+
 ## Setup-instructions guidance (hardening notes for you)
 
 - **"Confirm email" toggle:** the setup guide suggests disabling email confirmation *for local testing only*. **Re-enable it before production** — otherwise anyone can register with an address they don't own.

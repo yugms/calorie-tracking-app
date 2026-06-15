@@ -6,11 +6,13 @@ import type {
   ActivityLevel,
   AiJobStatus,
   AiJobType,
+  DietProfile,
   EntrySource,
   ExerciseIntensity,
   FoodSource,
   GoalType,
   MealType,
+  PrimaryGoal,
   Sex,
   UnitPref,
 } from './enums';
@@ -28,8 +30,28 @@ export interface Profile {
   daily_calorie_target: number | null;
   daily_water_target_ml: number | null;
   units_pref: UnitPref;
+  // Onboarding-derived fields (added in migration 0004).
+  onboarded_at: IsoTimestamp | null;
+  primary_goal: PrimaryGoal | null;
+  target_weight_kg: number | null;
+  weekly_rate_kg: number | null;
+  diet_profile: DietProfile | null;
+  exclusions: string[];
+  training_notes: string | null;
+  protein_target_g: number | null;
+  carbs_target_g: number | null;
+  fat_target_g: number | null;
   created_at: IsoTimestamp;
   updated_at: IsoTimestamp;
+}
+
+/** A body-weight measurement on a calendar date. */
+export interface WeightEntry {
+  id: UUID;
+  user_id: UUID;
+  weight_kg: number;
+  logged_on: IsoDate;
+  created_at: IsoTimestamp;
 }
 
 /**
